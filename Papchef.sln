@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papchef", "Papchef\Papchef.csproj", "{D3A81F08-D55B-4DA3-969C-189B86D831DE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DED8069B-F5E0-4574-B67A-0ADC9346D22E}
+	EndGlobalSection
+EndGlobal
