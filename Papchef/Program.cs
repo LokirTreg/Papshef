@@ -1,237 +1,218 @@
-﻿using Newtonsoft.Json;
-using System.Text.RegularExpressions;
-
-namespace Papchef;
-public enum LexemeType
+﻿public class TerminalSymbol
 {
-    Keyword,
-    Identifier,
-    Constant,
-    Operator,
-    Separator,
-    Unknown
+    public int Index { get; set; }
+    public string Symbol { get; set; }
+    public string Category { get; set; }
+    public string Type { get; set; }
+    public string Comment { get; set; }
 }
 
-public class Lexeme
+public class TerminalSymbolTable
 {
-    public LexemeType Type { get; }
+    public static List<TerminalSymbol> GetTable()
+    {
+        return new List<TerminalSymbol>
+        {
+            new TerminalSymbol { Index = 0, Symbol = "do", Category = "Ключевое слово", Type = "КлючевоеСлово_Do", Comment = "Стартовое слово" },
+            new TerminalSymbol { Index = 1, Symbol = "while", Category = "Ключевое слово", Type = "КлючевоеСлово_While", Comment = "Начало заголовка цикла" },
+            new TerminalSymbol { Index = 2, Symbol = "loop", Category = "Ключевое слово", Type = "КлючевоеСлово_End", Comment = "Конец тела цикла" },
+            new TerminalSymbol { Index = 3, Symbol = "and", Category = "Ключевое слово", Type = "КлючевоеСлово_And", Comment = "Логическая операция 'И'" },
+            new TerminalSymbol { Index = 4, Symbol = "or", Category = "Ключевое слово", Type = "КлючевоеСлово_Or", Comment = "Логическая операция 'ИЛИ'" },
+            new TerminalSymbol { Index = 5, Symbol = ";", Category = "Ключевое слово", Type = "КонецПредусловияЦикла", Comment = "Конец предусловия цикла" },
+            new TerminalSymbol { Index = 6, Symbol = "<", Category = "Специальный символ", Type = "ОператорСравнения", Comment = "Операция сравнения 'меньше'" },
+            new TerminalSymbol { Index = 7, Symbol = "<=", Category = "Специальный символ", Type = "ОператорСравнения", Comment = "Операция сравнения 'меньше или равно'" },
+            new TerminalSymbol { Index = 8, Symbol = "!=", Category = "Специальный символ", Type = "ОператорСравнения", Comment = "Операция сравнения 'неравно'" },
+            new TerminalSymbol { Index = 9, Symbol = "==", Category = "Специальный символ", Type = "ОператорСравнения", Comment = "Операция сравнения 'равно'" },
+            new TerminalSymbol { Index = 10, Symbol = "=", Category = "Специальный символ", Type = "ОператорПрисваивания", Comment = "Операция присваивания" },
+            new TerminalSymbol { Index = 11, Symbol = "+", Category = "Специальный символ", Type = "АрифметическийОператор", Comment = "Операция сложения" },
+            new TerminalSymbol { Index = 12, Symbol = "-", Category = "Специальный символ", Type = "АрифметическийОператор", Comment = "Операция вычитания" },
+            new TerminalSymbol { Index = 13, Symbol = "*", Category = "Специальный символ", Type = "АрифметическийОператор", Comment = "Операция умножения" },
+            new TerminalSymbol { Index = 14, Symbol = "/", Category = "Специальный символ", Type = "АрифметическийОператор", Comment = "Операция деления" },
+            new TerminalSymbol { Index = 15, Symbol = ">", Category = "Специальный символ", Type = "ОператорСравнения", Comment = "Операция сравнения 'больше'" },
+            new TerminalSymbol { Index = 16, Symbol = ">=", Category = "Специальный символ", Type = "ОператорСравнения", Comment = "Операция сравнения 'больше или равно'" }
+        };
+    }
+
+    public static void PrintTable()
+    {
+        var table = GetTable();
+        Console.WriteLine("{0,-5} {1,-10} {2,-20} {3,-25} {4,-40}", "Индекс", "Символ", "Категория", "Тип", "Комментарий");
+        foreach (var symbol in table)
+        {
+            Console.WriteLine("{0,-5} {1,-10} {2,-20} {3,-25} {4,-40}",
+                              symbol.Index, symbol.Symbol, symbol.Category, symbol.Type, symbol.Comment);
+        }
+    }
+}
+public class Lexem
+{
     public string Value { get; }
+    public LexemType Type { get; }
+    public int Position { get; }
 
-    public Lexeme(LexemeType type, string value)
+    public Lexem(string value, LexemType type, int position)
     {
-        Type = type;
         Value = value;
-    }
-
-    public override string ToString()
-    {
-        return $"[{Type}, {Value}]";
+        Type = type;
+        Position = position;
     }
 }
-
 public class Lexer
 {
-    private static readonly string[] Keywords = { "while", "do", "loop", "and", "or" };
-    private static readonly string[] Operators = { "<", "<=", ">", ">=", "=", "+", "-", "*", "/" };
-    private static readonly char[] Separators = { '(', ')', ';', ',' };
+    private readonly string _input;
+    private int _position;
 
-    public List<Lexeme> Analyze(string input)
+    public Lexer(string input)
     {
-        var lexemes = new List<Lexeme>();
-        var tokens = input.Split(new[] { ' ', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        _input = input;
+        _position = 0;
+    }
 
-        foreach (var token in tokens)
+    public List<Lexem> Analyze()
+    {
+        var tokens = new List<Lexem>();
+        while (_position < _input.Length)
         {
-            if (Array.Exists(Keywords, k => k == token))
+            if (char.IsWhiteSpace(CurrentChar()))
             {
-                lexemes.Add(new Lexeme(LexemeType.Keyword, token));
+                _position++;
             }
-            else if (Regex.IsMatch(token, @"^\d+$"))
+            else if (IsLetter(CurrentChar()))
             {
-                lexemes.Add(new Lexeme(LexemeType.Constant, token));
+                var Идентификатор = ReadWhile(IsLetterOrDigit);
+                tokens.Add(new Lexem(Идентификатор, IdentifyKeyword(Идентификатор), _position));
             }
-            else if (Array.Exists(Operators, op => op == token))
+            else if (char.IsDigit(CurrentChar()))
             {
-                lexemes.Add(new Lexeme(LexemeType.Operator, token));
+                var Константа = ReadWhile(char.IsDigit);
+                tokens.Add(new Lexem(Константа, LexemType.Константа, _position));
             }
-            else if (Array.Exists(Separators, sep => sep == token[0]))
+            else if (CurrentChar() == ';')
             {
-                lexemes.Add(new Lexeme(LexemeType.Separator, token));
+                var symbol = ReadWhile(c => c == ';');
+                tokens.Add(new Lexem(symbol, LexemType.КонецПредусловияЦикла, _position));
             }
-            else if (Regex.IsMatch(token, @"^[a-zA-Z_]\w*$"))
+            else if (CurrentChar() == '<' || CurrentChar() == '='|| CurrentChar() == '>' || CurrentChar() == '!')
             {
-                lexemes.Add(new Lexeme(LexemeType.Identifier, token));
+                var h = CurrentChar();
+                var symbol = ReadWhile(c => c == '<' || c == '=' || c == '!'|| c == '>');
+                if (symbol == "=")
+                {
+                    tokens.Add(new Lexem(symbol, LexemType.ОператорПрисваивания, _position));
+                }
+                else
+                {
+                    tokens.Add(new Lexem(symbol, LexemType.ОператорСравнения, _position));
+                }
+            }
+            else if (CurrentChar() == '+' || CurrentChar() == '-' || CurrentChar() == '/' || CurrentChar() == '*')
+            {
+                var symbol = ReadWhile(c => c == '+' || c == '-' || c == '/' || c == '*');
+                tokens.Add(new Lexem(symbol, LexemType.АрифметическийОператор, _position));
             }
             else
             {
-                lexemes.Add(new Lexeme(LexemeType.Unknown, token));
+                tokens.Add(new Lexem(CurrentChar().ToString(), LexemType.Неизвестно, _position));
+                _position++;
             }
         }
 
-        return lexemes;
+        return tokens;
+    }
+
+    private char CurrentChar()
+    {
+        return _input[_position];
+    }
+
+    private string ReadWhile(Func<char, bool> condition)
+    {
+        var start = _position;
+        while (_position < _input.Length && condition(_input[_position]))
+        {
+            _position++;
+        }
+
+        return _input.Substring(start, _position - start);
+    }
+
+    private bool IsLetter(char ch) => char.IsLetter(ch);
+
+    private bool IsLetterOrDigit(char ch) => char.IsLetterOrDigit(ch);
+
+    private LexemType IdentifyKeyword(string value)
+    {
+        switch (value)
+        {
+            case "while": return LexemType.КлючевоеСлово_While;
+            case "do": return LexemType.КлючевоеСлово_Do;
+            case "loop": return LexemType.КлючевоеСлово_End;
+            case "and": return LexemType.КлючевоеСлово_And;
+            case "or": return LexemType.КлючевоеСлово_Or;
+            default: return LexemType.Идентификатор;
+        }
     }
 }
-
-public class Parser
+public enum LexemType
 {
-    private List<Lexeme> lexemes;
-    private int currentLexemeIndex;
+    КлючевоеСлово_While,
+    КлючевоеСлово_Do,
+    КлючевоеСлово_End,
+    КлючевоеСлово_And,
+    КлючевоеСлово_Or,
+    КонецПредусловияЦикла,
+    ОператорСравнения,
+    АрифметическийОператор,
+    ОператорПрисваивания,
+    Идентификатор,
+    Константа,
+    Неизвестно
+}
 
-    public Parser(List<Lexeme> lexemes)
+public class Program
+{
+    static void Main(string[] args)
     {
-        this.lexemes = lexemes;
-        this.currentLexemeIndex = 0;
-    }
+        TerminalSymbolTable.PrintTable();
+        Console.WriteLine();
 
-    public void Parse()
-    {
-        Console.WriteLine("\nParsing Result:");
-        var tree = ParseCycle();
-        if (tree != null && currentLexemeIndex == lexemes.Count)
+        while (true)
         {
-            Console.WriteLine("Expression is syntactically correct.");
-            PrintSyntaxTree(tree, "");
-        }
-        else
-        {
-            Console.WriteLine("Syntax error in expression.");
-        }
-    }
-    public bool Валидатор()
-    {
-        Console.WriteLine("\nParsing Result:");
-        var tree = ParseCycle();
-        if (tree != null && currentLexemeIndex == lexemes.Count)
-        {
-            Console.WriteLine("Expression is syntactically correct.");
-            return true;
-        }
-        else
-        {
-            Console.WriteLine("Syntax error in expression.");
-            return false;
-        }
-    }
-    private Node ParseCycle()
-    {
-        if (CurrentLexemeIs(LexemeType.Keyword, "do"))
-        {
-            var doLexeme = NextLexeme();
-            if (CurrentLexemeIs(LexemeType.Keyword, "while"))
+            Console.WriteLine("Введите строку для анализа или exit для завершения программы или menu для показа таблицы терминала:");
+            string input = Console.ReadLine();
+            Console.WriteLine();
+
+            if (input.ToLower() == "exit")
             {
-                var whileLexeme = NextLexeme();
-                var expression = ParseExpression();
-                if (expression != null && CurrentLexemeIs(LexemeType.Keyword, "loop"))
+                break;
+            }
+            else if (input.ToLower() == "menu")
+            {
+                TerminalSymbolTable.PrintTable();
+            }
+            else
+            {
+                var lexer = new Lexer(input);
+                var tokens = lexer.Analyze();
+
+                foreach (var token in tokens)
                 {
-                    var loopLexeme = NextLexeme();
-                    return new Node(doLexeme, new Node(whileLexeme, expression, new Node(loopLexeme)));
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    if (token.Type == LexemType.Неизвестно)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                    }
+                    Console.Write($"{token.Type} : ");
+                    Console.ResetColor();
+                    Console.BackgroundColor = ConsoleColor.DarkBlue;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write($"{ token.Value}");
+                    Console.ResetColor();
+                    Console.Write($" столбец ");
+                    Console.WriteLine($"{ token.Position}");
                 }
             }
-        }
-        return null;
-    }
-
-    private Node ParseExpression()
-    {
-        var left = ParseTerm();
-        while (CurrentLexemeIs(LexemeType.Keyword, "and", "or"))
-        {
-            var operatorLexeme = NextLexeme();
-            var right = ParseTerm();
-            left = new Node(operatorLexeme, left, right);
-        }
-        return left;
-    }
-
-    private Node ParseTerm()
-    {
-        var left = ParseFactor();
-        while (CurrentLexemeIs(LexemeType.Operator, "<", "<=", ">", ">=", "+", "-", "*", "/"))
-        {
-            var operatorLexeme = NextLexeme();
-            var right = ParseFactor();
-            left = new Node(operatorLexeme, left, right);
-        }
-        return left;
-    }
-
-    private Node ParseFactor()
-    {
-        if (CurrentLexemeIs(LexemeType.Identifier) || CurrentLexemeIs(LexemeType.Constant))
-        {
-            return new Node(NextLexeme());
-        }
-        return null;
-    }
-
-    private Lexeme NextLexeme()
-    {
-        return lexemes[currentLexemeIndex++];
-    }
-
-    private bool CurrentLexemeIs(LexemeType type, params string[] values)
-    {
-        if (currentLexemeIndex >= lexemes.Count) return false;
-
-        var lexeme = lexemes[currentLexemeIndex];
-        if (lexeme.Type != type) return false;
-        return values.Length == 0 || Array.Exists(values, value => value == lexeme.Value);
-    }
-
-    private void PrintSyntaxTree(Node node, string indent)
-    {
-        if (node == null) return;
-        Console.WriteLine($"{indent}{node.Lexeme}");
-        PrintSyntaxTree(node.Left, indent + "  ");
-        PrintSyntaxTree(node.Right, indent + "  ");
-    }
-}
-
-public class Node
-{
-    public Lexeme Lexeme { get; }
-    public Node Left { get; }
-    public Node Right { get; }
-
-    public Node(Lexeme lexeme, Node left = null, Node right = null)
-    {
-        Lexeme = lexeme;
-        Left = left;
-        Right = right;
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        // Пример входных данных в JSON формате
-        string jsonInput = "{ \"code\": \"do while a < b and c >= d or e + f * g - h / i loop\" }";
-
-        // Десериализация JSON
-        var input = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonInput);
-        string code = input["code"];
-
-        Lexer lexer = new Lexer();
-        List<Lexeme> lexemes = lexer.Analyze(code);
-
-        Console.WriteLine("Lexical Analysis:");
-        foreach (var lexeme in lexemes)
-        {
-            Console.WriteLine(lexeme);
-        }
-
-        Parser parser = new Parser(lexemes);
-        //parser.Parse();
-        parser.Валидатор();
-        int totalSteps = 10;
-        ConsoleProgressBar progressBar = new ConsoleProgressBar(0, Console.GetCursorPosition().Top, totalSteps);
-        Console.F
-        for (int i = 0; i <= totalSteps; i++)
-        {
-            
-            progressBar.ShowProgress(i, $"Выполнено {i} из {totalSteps}");
-            Thread.Sleep(100); // Задержка для имитации работы
+            Console.WriteLine();
         }
     }
 }
