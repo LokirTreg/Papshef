@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papchef", "Papchef\Papchef.csproj", "{D3A81F08-D55B-4DA3-969C-189B86D831DE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Papchef", "Papchef\Papchef.csproj", "{D3A81F08-D55B-4DA3-969C-189B86D831DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papchef2", "Papchef2\Papchef2.csproj", "{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3A81F08-D55B-4DA3-969C-189B86D831DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

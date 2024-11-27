@@ -1,11 +1,12 @@
-﻿public class SymbolTable
+﻿namespace Papshef; 
+public class ТаблицаСимволов
 {
     public static List<Tuple<string, string, ТипЛексемы, string>> ТаблицаЗаданныхСимволов()
     {
         return new List<Tuple<string, string, ТипЛексемы, string>>
         {
             new Tuple<string, string, ТипЛексемы, string>("do", "Ключевое слово", ТипЛексемы.КлючевоеСлово_Do, "Стартовое слово"),
-            new Tuple<string, string, ТипЛексемы, string>("while", "Ключевое слово", ТипЛексемы.КлючевоеСлово_While, "Начало заголовка цикла"),
+            new Tuple<string, string, ТипЛексемы, string>("while", "Ключевое слово", ТипЛексемы.КлючевоеСлово_Until, "Начало заголовка цикла"),
             new Tuple<string, string, ТипЛексемы, string>("loop", "Ключевое слово", ТипЛексемы.КлючевоеСлово_End, "Конец тела цикла"),
             new Tuple<string, string, ТипЛексемы, string>("and", "Ключевое слово", ТипЛексемы.КлючевоеСлово_And, "Логическая операция 'И'"),
             new Tuple<string, string, ТипЛексемы, string>("or", "Ключевое слово", ТипЛексемы.КлючевоеСлово_Or, "Логическая операция 'ИЛИ'"),
@@ -85,7 +86,7 @@ public class ЛексическийАнализ
             {
                 var символ = ReadWhile(c => c == '<' || c == '=' || c == '!' || c == '>');
 
-                var операторыСравнения = SymbolTable.ТаблицаЗаданныхСимволов().GroupBy(i => i.Item3).FirstOrDefault(i => i.Key == ТипЛексемы.ОператорСравнения).Select(i => i.Item1).ToList();
+                var операторыСравнения = ТаблицаСимволов.ТаблицаЗаданныхСимволов().GroupBy(i => i.Item3).FirstOrDefault(i => i.Key == ТипЛексемы.ОператорСравнения).Select(i => i.Item1).ToList();
                 if (символ == "=")
                 {
                     лексемы.Add(new Лексема(символ, ТипЛексемы.ОператорПрисваивания, _позиция));
@@ -102,7 +103,7 @@ public class ЛексическийАнализ
             else if (ТекущийСимвол() == '+' || ТекущийСимвол() == '-' || ТекущийСимвол() == '/' || ТекущийСимвол() == '*')
             {
                 var символ = ReadWhile(c => c == '+' || c == '-' || c == '/' || c == '*');
-                var арифметическиеСравнения = SymbolTable.ТаблицаЗаданныхСимволов().GroupBy(i => i.Item3).FirstOrDefault(i => i.Key == ТипЛексемы.АрифметическийОператор).Select(i => i.Item1).ToList();
+                var арифметическиеСравнения = ТаблицаСимволов.ТаблицаЗаданныхСимволов().GroupBy(i => i.Item3).FirstOrDefault(i => i.Key == ТипЛексемы.АрифметическийОператор).Select(i => i.Item1).ToList();
                 if (арифметическиеСравнения.Contains(символ))
                 {
                     лексемы.Add(new Лексема(символ, ТипЛексемы.АрифметическийОператор, _позиция));
@@ -146,7 +147,7 @@ public class ЛексическийАнализ
     {
         switch (value)
         {
-            case "while": return ТипЛексемы.КлючевоеСлово_While;
+            case "until": return ТипЛексемы.КлючевоеСлово_Until;
             case "do": return ТипЛексемы.КлючевоеСлово_Do;
             case "loop": return ТипЛексемы.КлючевоеСлово_End;
             case "and": return ТипЛексемы.КлючевоеСлово_And;
@@ -157,7 +158,7 @@ public class ЛексическийАнализ
 }
 public enum ТипЛексемы
 {
-    КлючевоеСлово_While,
+    КлючевоеСлово_Until,
     КлючевоеСлово_Do,
     КлючевоеСлово_End,
     КлючевоеСлово_And,
@@ -175,12 +176,13 @@ public class Program
 {
     static void Main(string[] args)
     {
-        SymbolTable.ВывестиТаблицу();
+        ТаблицаСимволов.ВывестиТаблицу();
         Console.WriteLine();
 
+        Console.ResetColor();
         while (true)
         {
-            Console.WriteLine("Введите строку для анализа или exit для завершения программы или menu для показа таблицы терминала:");
+            Console.WriteLine("Введите строку для анализа или exit для завершения программы или ter для показа таблицы терминала:");
             string input = Console.ReadLine();
             Console.WriteLine();
 
@@ -190,30 +192,30 @@ public class Program
             }
             else if (input == "ter")
             {
-                SymbolTable.ВывестиТаблицу();
+                ТаблицаСимволов.ВывестиТаблицу();
             }
             else
             {
                 var лексемы = new ЛексическийАнализ(input).Анализ();
 
+                Console.WriteLine("{0,-25} | {1,-8} | {2,-8} |", "Тип", "Значение", "Позиция");
                 foreach (var лексема in лексемы)
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    if (лексема.Type == ТипЛексемы.Неизвестно)
+                        Console.WriteLine("{0,-25} | {1,-8} | {2,-8} |",
+                                          лексема.Type, лексема.Value, лексема.Position);
+                }
+
+                Console.BackgroundColor = ConsoleColor.Red;
+                if (лексемы.Any(i => i.Type == ТипЛексемы.Неизвестно))
+                {
+                    Console.WriteLine("Ошибка : Неизвестные токены :");
+                    foreach (var err in лексемы.Where(i => i.Type == ТипЛексемы.Неизвестно))
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("{0,-8} на позиции {1,-8}", err.Value, err.Position);
                     }
-                    Console.Write($"{лексема.Type} : ");
-                    Console.ResetColor();
-                    Console.BackgroundColor = ConsoleColor.DarkBlue;
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write($"{лексема.Value}");
-                    Console.ResetColor();
-                    Console.Write($" столбец ");
-                    Console.WriteLine($"{лексема.Position}");
                 }
             }
-            Console.WriteLine();
+            Console.ResetColor();
         }
     }
 }
