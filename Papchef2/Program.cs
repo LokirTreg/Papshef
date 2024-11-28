@@ -1,4 +1,27 @@
 ﻿namespace Papshef2;
+public enum ТипЛексемы
+{
+    ID,
+    Константа,
+    Присваивание,
+    Разделитель,
+    Плюс,
+    Умножить,
+    OPENPAREN,
+    CLOSEPAREN,
+    While,
+    Colon,
+    DO,
+    END,
+    AND,
+    OR,
+    Сравнение,
+    CLOSEBRACE,
+    OPENBRACE,
+    FOR,
+    LOOP,
+    DIV
+}
 public class Parser
 {
     private readonly List<Token> _tokens;
@@ -183,7 +206,7 @@ public class Parser
         if (CurrentToken.Type == ТипЛексемы.DO)
         {
             Match(ТипЛексемы.DO);
-            Match(ТипЛексемы.Until);
+            Match(ТипЛексемы.While);
             ParseLogicalExpression();
 
             ParseStatement();
@@ -216,29 +239,6 @@ public class Parser
             throw new Exception($"Ошибка: неизвестный оператор {CurrentToken.Value}. В позиции {_currentTokenIndex}");
         }
     }
-}
-public enum ТипЛексемы
-{
-    ID,
-    Константа,
-    Присваивание,
-    Разделитель,
-    Плюс,
-    Умножить,
-    OPENPAREN,
-    CLOSEPAREN,
-    Until,
-    Colon,
-    DO,
-    END,
-    AND,
-    OR,
-    Сравнение,
-    CLOSEBRACE,
-    OPENBRACE,
-    FOR,
-    LOOP,
-    DIV
 }
 public class Token
 {
@@ -288,9 +288,9 @@ public class Lexer
                 {
                     tokens.Add(new Token(ТипЛексемы.DO, identifier));
                 }
-                else if (identifier == "until")
+                else if (identifier == "while")
                 {
-                    tokens.Add(new Token(ТипЛексемы.Until, identifier));
+                    tokens.Add(new Token(ТипЛексемы.While, identifier));
                 }
                 else if (identifier == "and")
                 {

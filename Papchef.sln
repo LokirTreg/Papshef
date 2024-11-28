@@ -5,7 +5,11 @@ VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Papchef", "Papchef\Papchef.csproj", "{D3A81F08-D55B-4DA3-969C-189B86D831DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papchef2", "Papchef2\Papchef2.csproj", "{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Papchef2", "Papchef2\Papchef2.csproj", "{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papchef3", "Papchef3\Papchef3.csproj", "{1BB86454-AF70-4C4E-93ED-F6AD8D30FA9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papchef4", "Papchef4\Papchef4.csproj", "{29C98474-23C4-4346-A181-91FC2E347601}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4AB82C4F-475A-4DD6-B849-7CCCC24B838A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BB86454-AF70-4C4E-93ED-F6AD8D30FA9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BB86454-AF70-4C4E-93ED-F6AD8D30FA9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BB86454-AF70-4C4E-93ED-F6AD8D30FA9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BB86454-AF70-4C4E-93ED-F6AD8D30FA9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29C98474-23C4-4346-A181-91FC2E347601}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29C98474-23C4-4346-A181-91FC2E347601}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29C98474-23C4-4346-A181-91FC2E347601}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29C98474-23C4-4346-A181-91FC2E347601}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
