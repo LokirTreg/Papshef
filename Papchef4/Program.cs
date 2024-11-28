@@ -1,4 +1,6 @@
-﻿namespace Papchef4;
+﻿using System;
+
+namespace Papchef4;
 public enum ECmd
 {
     JMP,
@@ -503,6 +505,8 @@ public class Parser
         int startLoopIndex = _postfix.GetCurrentAddress();
 
         Match(TokenType.DO);
+
+
         Match(TokenType.WHILE);
 
         ParseLogicalExpression();
@@ -536,11 +540,17 @@ public class PostfixEntry
 {
     public EEntryType Type { get; set; }
     public int Index { get; set; }
-
+    public string Value { get; set; }
     public PostfixEntry(EEntryType type, int index)
     {
         Type = type;
         Index = index;
+    }
+    public PostfixEntry(EEntryType type, int index, string value)
+    {
+        Type = type;
+        Index = index;
+        Value = value;
     }
 }
 public class PostfixForm
@@ -673,7 +683,14 @@ public class PostfixForm
 
         if (!_variables.ContainsKey(varKey))
         {
-            Console.WriteLine($"Инициализация переменной: {varKey} со значением по умолчанию 0.");
+            if (!_varNames.ContainsKey(varHash))
+            {
+                Console.WriteLine($"Инициализация переменной: {varKey} со значением по умолчанию 0.");
+            }
+            else
+            {
+                Console.WriteLine($"Инициализация переменной: {_varNames[varHash]} со значением по умолчанию 0.");
+            }
             _variables[varKey] = 0;
         }
 
@@ -696,7 +713,7 @@ public class PostfixForm
     public int PushVar(string varName)
     {
         int index = varName.GetHashCode();
-        _postfix.Add(new PostfixEntry(EEntryType.etVar, index));
+        _postfix.Add(new PostfixEntry(EEntryType.etVar, index, varName));
 
         if (!_varNames.ContainsKey(index))
         {
@@ -740,7 +757,7 @@ public class PostfixForm
                     entryDescription = $"Команда: {((ECmd)entry.Index)}";
                     break;
                 case EEntryType.etVar:
-                    entryDescription = $"Переменная (хэш): {entry.Index}";
+                    entryDescription = $"Переменная : {entry.Value}";
                     break;
                 case EEntryType.etConst:
                     entryDescription = $"Константа: {entry.Index}";
