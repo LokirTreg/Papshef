@@ -158,6 +158,13 @@ public class Lexer
 
             switch (currentChar)
             {
+                case '!':
+                    if (_position + 1 < _input.Length && _input[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.REL, "!="));
+                        _position += 2;
+                    }
+                    break;
                 case '=':
                     if (_position + 1 < _input.Length && _input[_position + 1] == '=')
                     {
@@ -474,6 +481,9 @@ public class Parser
                 case "==":
                     _postfix.WriteCmd(ECmd.CMPE);
                     break;
+                case "!=":
+                    _postfix.WriteCmd(ECmd.CMPNE);
+                    break;
                 default:
                     throw new Exception($"Неизвестная операция сравнения: {relOp}");
             }
@@ -504,6 +514,7 @@ public class Parser
     {
         int startLoopIndex = _postfix.GetCurrentAddress();
 
+        ParseAssignment();
         Match(TokenType.DO);
 
 
@@ -656,6 +667,10 @@ public class PostfixForm
                 _stack.PushVal(_stack.PopVal() == _stack.PopVal() ? 1 : 0);
                 return pos + 1;
 
+            case ECmd.CMPNE:
+                _stack.PushVal(_stack.PopVal() != _stack.PopVal() ? 1 : 0);
+                return pos + 1;
+
             case ECmd.AND:
                 _stack.PushVal((_stack.PopVal() != 0 && _stack.PopVal() != 0) ? 1 : 0);
                 return pos + 1;
@@ -685,13 +700,13 @@ public class PostfixForm
         {
             if (!_varNames.ContainsKey(varHash))
             {
-                Console.WriteLine($"Инициализация переменной: {varKey} со значением по умолчанию 0.");
+                Console.WriteLine($"Инициализация переменной: {varKey} со значением по умолчанию 1.");
             }
             else
             {
-                Console.WriteLine($"Инициализация переменной: {_varNames[varHash]} со значением по умолчанию 0.");
+                Console.WriteLine($"Инициализация переменной: {_varNames[varHash]} со значением по умолчанию 1.");
             }
-            _variables[varKey] = 0;
+            _variables[varKey] = 1;
         }
 
         return _variables[varKey];
