@@ -24,7 +24,7 @@ public enum ТипЛексемы
 }
 public class Parser
 {
-    private readonly List<Token> _tokens;
+    public readonly List<Token> _tokens;
     private int _currentTokenIndex;
 
     public Parser(List<Token> tokens)

@@ -77,12 +77,14 @@ public class ExecutionStack
 
     public void PrintStack()
     {
+        Console.ForegroundColor = ConsoleColor.Yellow;
         Console.Write("\t Текущее состояние стека: { ");
         foreach (var item in _stack)
         {
             Console.Write("{0} ", item);
         }
         Console.WriteLine("}");
+        Console.ResetColor();
     }
 }
 public class Lexer

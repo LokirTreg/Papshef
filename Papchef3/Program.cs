@@ -434,7 +434,7 @@ public class Parser
             throw new Exception("Ошибка: ожидался операнд");
         }
     }
-    public void ParseDoLoopUntil()
+    public void DoWhile()
     {
         int startLoopIndex = _postfix.WriteCmdPtr(-1);
 
@@ -462,6 +462,10 @@ public class Parser
     public void PrintPostfix()
     {
         _postfix.PrintPostfix();
+    }
+    public void PrintPostfixStr()
+    {
+        _postfix.PrintPostfixStr();
     }
 }
 public class PostfixEntry
@@ -554,6 +558,33 @@ public class PostfixForm
             Console.WriteLine(entryDescription);
         }
     }
+    public void PrintPostfixStr()
+    {
+        foreach (var entry in _postfix)
+        {
+            string entryDescription = "";
+
+            switch (entry.Type)
+            {
+                case EEntryType.etCmd:
+                    entryDescription = $"{((ECmd)entry.Index)}";
+                    break;
+                case EEntryType.etVar:
+                    entryDescription = $"{entry.Value}";
+                    break;
+                case EEntryType.etConst:
+                    entryDescription = $"{entry.Index}";
+                    break;
+                case EEntryType.etCmdPtr:
+                    break;
+                default:
+                    entryDescription = "Неизвестный тип";
+                    break;
+            }
+
+            Console.Write("{0} ", entryDescription);
+        }
+    }
 }
 class Program
 {
@@ -575,10 +606,11 @@ class Program
                 List<Token> tokens = lexer.Tokenize();
 
                 var parser = new Parser(tokens);
-                parser.ParseDoLoopUntil();
+                parser.DoWhile();
 
-                Console.WriteLine("Сгенерированный ПОЛИЗ:");
                 parser.PrintPostfix();
+                Console.WriteLine("Сгенерированный ПОЛИЗ:");
+                parser.PrintPostfixStr();
                 var t = 0;
             }
             catch (Exception ex)
