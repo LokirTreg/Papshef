@@ -64,8 +64,10 @@ public class ExecutionStack
     public int PopVal()
     {
         if (_stack.Count == 0)
-            throw new InvalidOperationException("Ошибка: попытка извлечь значение из пустого стека.");
-        return _stack.Pop();
+            return int.MinValue;
+        var result = _stack.Pop();
+        //Console.WriteLine("{0}, {1}", _stack.ToString(), result);
+        return result;
     }
 
     public void PushVal(int value)
@@ -75,11 +77,12 @@ public class ExecutionStack
 
     public void PrintStack()
     {
-        Console.WriteLine("Текущее состояние стека: ");
+        Console.Write("\t Текущее состояние стека: { ");
         foreach (var item in _stack)
         {
-            Console.WriteLine(item);
+            Console.Write("{0} ", item);
         }
+        Console.WriteLine("}");
     }
 }
 public class Lexer
@@ -514,7 +517,6 @@ public class Parser
     {
         int startLoopIndex = _postfix.GetCurrentAddress();
 
-        ParseAssignment();
         Match(TokenType.DO);
 
 
@@ -522,6 +524,7 @@ public class Parser
 
         ParseLogicalExpression();
 
+        int jzIndex = _postfix.WriteCmd(ECmd.JZ);
         while (HasMoreTokens() && CurrentToken.Type != TokenType.LOOP)
         {
             ParseAssignment();
@@ -530,10 +533,9 @@ public class Parser
         Match(TokenType.LOOP);
 
 
-        int jzIndex = _postfix.WriteCmd(ECmd.JZ);
 
         _postfix.WriteCmd(ECmd.JMP);
-        _postfix.SetCmdPtr(jzIndex, _postfix.GetCurrentAddress() + 1);
+        _postfix.SetCmdPtr(jzIndex, _postfix.GetCurrentAddress()+1);
     }
     #endregion
 
@@ -563,6 +565,10 @@ public class PostfixEntry
         Index = index;
         Value = value;
     }
+    public override string ToString()
+    {
+        return $"{Type} {Index} {Value}"; 
+    }
 }
 public class PostfixForm
 {
@@ -589,6 +595,8 @@ public class PostfixForm
                 case EEntryType.etCmd:
                     var cmd = (ECmd)entry.Index;
                     pos = ExecuteCommand(cmd, pos);
+                    Console.WriteLine("{0} ", cmd);
+                    _stack.PrintStack();
                     break;
                 case EEntryType.etVar:
                     _stack.PushVal(GetVarValue(entry.Index));
@@ -603,16 +611,20 @@ public class PostfixForm
                     if (condition == 0)
                     {
                         pos = entry.Index;
+                    }else if (condition == int.MinValue)
+                    {
+                        pos = int.MinValue;
                     }
                     else
                     {
                         pos = pos + 1;
-                        // TODO возвращаемся в начало цикла, хардкод
                         _stack.PushVal(0);
                     }
+
                     break;
                 default:
                     throw new Exception($"Неизвестный тип записи: {entry.Type}");
+
             }
         }
     }
@@ -623,68 +635,108 @@ public class PostfixForm
         {
             case ECmd.SET:
                 int value = _stack.PopVal();
-                int varHash = _postfix[++pos].Index;
+                var t = _postfix[++pos];
+                int varHash = t.Index;
+                string varName = t.Value;
                 SetVarValue(varHash, value);
+                Console.Write("{0, -10} {1, -10} ", varName, value);
                 return pos + 1;
 
             case ECmd.ADD:
-                _stack.PushVal(_stack.PopVal() + _stack.PopVal());
+                var a1 = _stack.PopVal();
+                var a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 + a2);
                 return pos + 1;
 
             case ECmd.SUB:
-                int subtrahend = _stack.PopVal();
-                _stack.PushVal(_stack.PopVal() - subtrahend);
+                var a3 = _stack.PopVal();
+                var a4 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a3, a4);
+                _stack.PushVal(a3 - a4);
                 return pos + 1;
 
             case ECmd.MUL:
-                _stack.PushVal(_stack.PopVal() * _stack.PopVal());
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 * a2);
                 return pos + 1;
 
             case ECmd.DIV:
-                int divisor = _stack.PopVal();
-                if (divisor == 0)
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                if (a1 == 0)
                     throw new DivideByZeroException("Ошибка: деление на ноль.");
-                _stack.PushVal(_stack.PopVal() / divisor);
+                _stack.PushVal(a2 / a1);
                 return pos + 1;
 
             case ECmd.CMPL:
-                _stack.PushVal(_stack.PopVal() > _stack.PopVal() ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 > a2 ? 1 : 0);
                 return pos + 1;
 
             case ECmd.CMPLE:
-                _stack.PushVal(_stack.PopVal() >= _stack.PopVal() ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 >= a2 ? 1 : 0);
                 return pos + 1;
 
             case ECmd.CMPG:
-                _stack.PushVal(_stack.PopVal() < _stack.PopVal() ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 < a2 ? 1 : 0);
                 return pos + 1;
 
             case ECmd.CMPGE:
-                _stack.PushVal(_stack.PopVal() <= _stack.PopVal() ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 <= a2 ? 1 : 0);
                 return pos + 1;
 
             case ECmd.CMPE:
-                _stack.PushVal(_stack.PopVal() == _stack.PopVal() ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 == a2 ? 1 : 0);
                 return pos + 1;
 
             case ECmd.CMPNE:
-                _stack.PushVal(_stack.PopVal() != _stack.PopVal() ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal(a1 != a2 ? 1 : 0);
                 return pos + 1;
 
             case ECmd.AND:
-                _stack.PushVal((_stack.PopVal() != 0 && _stack.PopVal() != 0) ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal((a1 != 0 && a2 != 0) ? 1 : 0);
                 return pos + 1;
 
             case ECmd.OR:
-                _stack.PushVal((_stack.PopVal() != 0 || _stack.PopVal() != 0) ? 1 : 0);
+                a1 = _stack.PopVal();
+                a2 = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", a1, a2);
+                _stack.PushVal((a1 != 0 || a2 != 0) ? 1 : 0);
                 return pos + 1;
 
             case ECmd.JMP:
-                return _stack.PopVal();
+                a1 = _stack.PopVal();
+                Console.Write("{0, -10} ", a1);
+                return a1;
 
             case ECmd.JZ:
                 int address = _stack.PopVal();
                 int condition = _stack.PopVal();
+                Console.Write("{0, -10} {1, -10} ", condition, address);
                 return condition == 0 ? address : pos + 1;
 
             default:
@@ -700,13 +752,21 @@ public class PostfixForm
         {
             if (!_varNames.ContainsKey(varHash))
             {
-                Console.WriteLine($"Инициализация переменной: {varKey} со значением по умолчанию 1.");
+                Console.Write($"Инициализация переменной(по умолчанию 0): {varKey} = ");
             }
             else
             {
-                Console.WriteLine($"Инициализация переменной: {_varNames[varHash]} со значением по умолчанию 1.");
+                Console.Write($"Инициализация переменной(по умолчанию 0): {_varNames[varHash]} = ");
             }
-            _variables[varKey] = 1;
+            int varValue = 0;
+            try
+            {
+                varValue = int.Parse(Console.ReadLine());
+            }
+            catch
+            {
+            }
+            _variables[varKey] = varValue;
         }
 
         return _variables[varKey];
@@ -721,7 +781,7 @@ public class PostfixForm
 
     public int WriteCmd(ECmd cmd)
     {
-        _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)cmd));
+        _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)cmd, cmd.GetType().Name));
         return _postfix.Count - 1;
     }
 
@@ -788,12 +848,6 @@ public class PostfixForm
         }
     }
 
-    public void SetVarAndPop(string varName)
-    {
-        int varHash = varName.GetHashCode();
-        int value = _stack.PopVal();
-        SetVarValue(varHash, value);
-    }
 
     public void PrintVariables()
     {
