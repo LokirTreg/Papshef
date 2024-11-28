@@ -1,33 +1,4 @@
 ﻿namespace Papchef4;
-public enum ТипЛексемы
-{
-    ID,
-    Константа,
-    Присваивание,
-    Разделитель,
-    Плюс,
-    Минус,
-    Умножить,
-    Деление,
-    Openparen,
-    Closeparen,
-    While,
-    Colon,
-    Do,
-    And,
-    Or,
-    Сравнение,
-    Сlosebrace,
-    Openbrace,
-    Loop
-}
-public enum EEntryType
-{
-    etCmd,
-    etVar,
-    etConst,
-    etCmdPtr
-}
 public enum ECmd
 {
     JMP,
@@ -35,14 +6,79 @@ public enum ECmd
     SET,
     ADD,
     SUB,
-    And,
-    Or,
+    AND,
+    OR,
     CMPE,
     CMPNE,
     CMPL,
     CMPLE,
     MUL,
+    DIV,
+    CMPG,
+    CMPGE
+}
+public enum EEntryType
+{
+    etCmd,      // Команда (например, ADD, SUB, MUL, DIV, JZ, JMP и т.д.)
+    etVar,      // Переменная (хэш-значение имени переменной, которая используется в выражении)
+    etConst,    // Константа (например, числовое значение, которое напрямую участвует в выражении)
+    etCmdPtr    // Указатель на команду (например, для команд перехода: JZ, JMP; адрес перехода в ПОЛИЗ)
+}
+public enum TokenType
+{
+    ID,
+    CONST,
+    ASSIGN,
+    SEMICOLON,
+    COLON,
+    PLUS,
+    MINUS,
+    MULT,
+    OPENPAREN,
+    CLOSEPAREN,
+    WHILE,
+    DO,
+    END,
+    AND,
+    OR,
+    REL,
+    CLOSEBRACE,
+    OPENBRACE,
+    INCREMENT,
+    FOR,
+    LOOP,
+    UNTIL,
     DIV
+}
+public class ExecutionStack
+{
+    private Stack<int> _stack;
+
+    public ExecutionStack()
+    {
+        _stack = new Stack<int>();
+    }
+
+    public int PopVal()
+    {
+        if (_stack.Count == 0)
+            throw new InvalidOperationException("Ошибка: попытка извлечь значение из пустого стека.");
+        return _stack.Pop();
+    }
+
+    public void PushVal(int value)
+    {
+        _stack.Push(value);
+    }
+
+    public void PrintStack()
+    {
+        Console.WriteLine("Текущее состояние стека: ");
+        foreach (var item in _stack)
+        {
+            Console.WriteLine(item);
+        }
+    }
 }
 public class Lexer
 {
@@ -72,29 +108,41 @@ public class Lexer
             if (char.IsLetter(currentChar))
             {
                 var identifier = ReadIdentifier();
-                if (identifier == "do")
+                if (identifier == "for")
                 {
-                    tokens.Add(new Token(ТипЛексемы.Do, identifier));
+                    tokens.Add(new Token(TokenType.FOR, identifier));
                 }
                 else if (identifier == "while")
                 {
-                    tokens.Add(new Token(ТипЛексемы.While, identifier));
+                    tokens.Add(new Token(TokenType.WHILE, identifier));
                 }
                 else if (identifier == "and")
                 {
-                    tokens.Add(new Token(ТипЛексемы.And, identifier));
+                    tokens.Add(new Token(TokenType.AND, identifier));
                 }
                 else if (identifier == "or")
                 {
-                    tokens.Add(new Token(ТипЛексемы.Or, identifier));
+                    tokens.Add(new Token(TokenType.OR, identifier));
+                }
+                else if (identifier == "do")
+                {
+                    tokens.Add(new Token(TokenType.DO, identifier));
                 }
                 else if (identifier == "loop")
                 {
-                    tokens.Add(new Token(ТипЛексемы.Loop, identifier));
+                    tokens.Add(new Token(TokenType.LOOP, identifier));
+                }
+                else if (identifier == "while")
+                {
+                    tokens.Add(new Token(TokenType.WHILE, identifier));
+                }
+                else if (identifier == "end")
+                {
+                    tokens.Add(new Token(TokenType.END, identifier));
                 }
                 else
                 {
-                    tokens.Add(new Token(ТипЛексемы.ID, identifier));
+                    tokens.Add(new Token(TokenType.ID, identifier));
                 }
                 continue;
             }
@@ -102,7 +150,7 @@ public class Lexer
             if (char.IsDigit(currentChar))
             {
                 var number = ReadNumber();
-                tokens.Add(new Token(ТипЛексемы.Константа, number));
+                tokens.Add(new Token(TokenType.CONST, number));
                 continue;
             }
 
@@ -111,80 +159,85 @@ public class Lexer
                 case '=':
                     if (_position + 1 < _input.Length && _input[_position + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "=="));
+                        tokens.Add(new Token(TokenType.REL, "=="));
                         _position += 2;
                     }
                     else
                     {
-                        tokens.Add(new Token(ТипЛексемы.Присваивание, "="));
+                        tokens.Add(new Token(TokenType.ASSIGN, "="));
                         _position++;
-                    }
-                    break;
-                case '!':
-                    if (_position + 1 < _input.Length && _input[_position + 1] == '=')
-                    {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "!="));
-                        _position += 2;
                     }
                     break;
                 case '<':
                     if (_position + 1 < _input.Length && _input[_position + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "<="));
+                        tokens.Add(new Token(TokenType.REL, "<="));
                         _position += 2;
                     }
                     else
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "<"));
+                        tokens.Add(new Token(TokenType.REL, "<"));
                         _position++;
                     }
                     break;
                 case '>':
                     if (_position + 1 < _input.Length && _input[_position + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, ">="));
+                        tokens.Add(new Token(TokenType.REL, ">="));
                         _position += 2;
                     }
                     else
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, ">"));
+                        tokens.Add(new Token(TokenType.REL, ">"));
                         _position++;
                     }
                     break;
                 case '+':
-                    tokens.Add(new Token(ТипЛексемы.Плюс, "+"));
-                    _position++;
+                    if (_position + 1 < _input.Length && _input[_position + 1] == '+')
+                    {
+                        tokens.Add(new Token(TokenType.INCREMENT, "++"));
+                        _position += 2;
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.PLUS, "+"));
+                        _position++;
+                    }
                     break;
                 case '-':
-                    tokens.Add(new Token(ТипЛексемы.Плюс, "-"));
+                    tokens.Add(new Token(TokenType.MINUS, "-"));
                     _position++;
                     break;
                 case '*':
-                    tokens.Add(new Token(ТипЛексемы.Умножить, "*"));
+                    tokens.Add(new Token(TokenType.MULT, "*"));
                     _position++;
                     break;
                 case '(':
-                    tokens.Add(new Token(ТипЛексемы.Openparen, "("));
+                    tokens.Add(new Token(TokenType.OPENPAREN, "("));
                     _position++;
                     break;
                 case ')':
-                    tokens.Add(new Token(ТипЛексемы.Closeparen, ")"));
+                    tokens.Add(new Token(TokenType.CLOSEPAREN, ")"));
                     _position++;
                     break;
                 case '{':
-                    tokens.Add(new Token(ТипЛексемы.Openbrace, "{"));
+                    tokens.Add(new Token(TokenType.OPENBRACE, "{"));
                     _position++;
                     break;
                 case '}':
-                    tokens.Add(new Token(ТипЛексемы.Сlosebrace, "}"));
+                    tokens.Add(new Token(TokenType.CLOSEBRACE, "}"));
                     _position++;
                     break;
                 case ';':
-                    tokens.Add(new Token(ТипЛексемы.Разделитель, ";"));
+                    tokens.Add(new Token(TokenType.SEMICOLON, ";"));
+                    _position++;
+                    break;
+                case ':':
+                    tokens.Add(new Token(TokenType.COLON, ":"));
                     _position++;
                     break;
                 case '/':
-                    tokens.Add(new Token(ТипЛексемы.Деление, "/"));
+                    tokens.Add(new Token(TokenType.DIV, "/"));
                     _position++;
                     break;
                 default:
@@ -219,10 +272,10 @@ public class Lexer
 }
 public class Token
 {
-    public ТипЛексемы Type { get; }
+    public TokenType Type { get; }
     public string Value { get; }
 
-    public Token(ТипЛексемы type, string value)
+    public Token(TokenType type, string value)
     {
         Type = type;
         Value = value;
@@ -233,34 +286,261 @@ public class Token
         return $"{Type} ({Value})";
     }
 }
-public class ExecutionStack
+public class Parser
 {
-    private Stack<int> _stack;
+    private readonly List<Token> _tokens;
+    private PostfixForm _postfix;
+    private int _currentTokenIndex;
 
-    public ExecutionStack()
+    #region Constructor and Helpers
+    public Parser(List<Token> tokens)
     {
-        _stack = new Stack<int>();
+        _tokens = tokens;
+        _currentTokenIndex = 0;
+        _postfix = new PostfixForm();
     }
 
-    public int PopVal()
+    private Token CurrentToken
     {
-        if (_stack.Count == 0)
-            throw new InvalidOperationException("Ошибка: попытка извлечь значение из пустого стека.");
-        return _stack.Pop();
-    }
-
-    public void PushVal(int value)
-    {
-        _stack.Push(value);
-    }
-
-    public void PrintStack()
-    {
-        Console.WriteLine("Текущее состояние стека: ");
-        foreach (var item in _stack)
+        get
         {
-            Console.WriteLine(item);
+            if (HasMoreTokens())
+            {
+                return _tokens[_currentTokenIndex];
+            }
+            else
+            {
+                throw new Exception("Ошибка: неожиданный конец выражения.");
+            }
         }
+    }
+
+    private bool HasMoreTokens()
+    {
+        return _currentTokenIndex < _tokens.Count;
+    }
+
+    private void Match(TokenType expectedType)
+    {
+        if (CurrentToken.Type == expectedType)
+        {
+            _currentTokenIndex++;
+        }
+        else
+        {
+            throw new Exception($"Ошибка: ожидалось {expectedType}, но найдено {CurrentToken.Type}");
+        }
+    }
+    #endregion
+
+    #region Assignment and Expression Parsing
+    public void ParseAssignment()
+    {
+        if (CurrentToken.Type == TokenType.ID)
+        {
+            string varName = CurrentToken.Value;
+            Match(TokenType.ID);
+            Match(TokenType.ASSIGN);
+
+            ParseExpression();
+
+            _postfix.WriteCmd(ECmd.SET);
+            _postfix.PushVar(varName);
+
+            if (CurrentToken.Type == TokenType.SEMICOLON)
+            {
+                Match(TokenType.SEMICOLON);
+            }
+            else
+            {
+                throw new Exception("Ошибка: Ожидалась ';' после присваивания.");
+            }
+        }
+    }
+
+    private void ParseExpression()
+    {
+        ParseTerm();
+        while (CurrentToken.Type == TokenType.PLUS || CurrentToken.Type == TokenType.MINUS)
+        {
+            if (CurrentToken.Type == TokenType.PLUS)
+            {
+                Match(TokenType.PLUS);
+                ParseTerm();
+                _postfix.WriteCmd(ECmd.ADD);
+            }
+            else if (CurrentToken.Type == TokenType.MINUS)
+            {
+                Match(TokenType.MINUS);
+                ParseTerm();
+                _postfix.WriteCmd(ECmd.SUB);
+            }
+        }
+    }
+
+    private void ParseTerm()
+    {
+        ParseFactor();
+        while (CurrentToken.Type == TokenType.MULT || CurrentToken.Type == TokenType.DIV)
+        {
+            if (CurrentToken.Type == TokenType.MULT)
+            {
+                Match(TokenType.MULT);
+                ParseFactor();
+                _postfix.WriteCmd(ECmd.MUL);
+            }
+            else if (CurrentToken.Type == TokenType.DIV)
+            {
+                Match(TokenType.DIV);
+                ParseFactor();
+                _postfix.WriteCmd(ECmd.DIV);
+            }
+        }
+    }
+
+    private void ParseFactor()
+    {
+        if (CurrentToken.Type == TokenType.ID)
+        {
+            _postfix.PushVar(CurrentToken.Value);
+            Match(TokenType.ID);
+        }
+        else if (CurrentToken.Type == TokenType.CONST)
+        {
+            _postfix.PushConst(int.Parse(CurrentToken.Value));
+            Match(TokenType.CONST);
+        }
+        else
+        {
+            throw new Exception("Ожидалось арифметическое выражение");
+        }
+    }
+    #endregion
+
+    #region Logical and Relational Expressions
+    private void ParseLogicalExpression()
+    {
+        ParseRelationalExpression();
+
+        while (CurrentToken.Type == TokenType.AND || CurrentToken.Type == TokenType.OR)
+        {
+            if (CurrentToken.Type == TokenType.AND)
+            {
+                Match(TokenType.AND);
+                ParseRelationalExpression();
+                _postfix.WriteCmd(ECmd.AND);
+            }
+            else if (CurrentToken.Type == TokenType.OR)
+            {
+                Match(TokenType.OR);
+                ParseRelationalExpression();
+                _postfix.WriteCmd(ECmd.OR);
+            }
+
+            if (_currentTokenIndex == _tokens.Count)
+            {
+                break;
+            }
+        }
+    }
+
+    private void ParseRelationalExpression()
+    {
+        ParseOperand();
+
+        if (CurrentToken.Type == TokenType.REL)
+        {
+            string relOp = CurrentToken.Value;
+            Match(TokenType.REL);
+
+            ParseOperand();
+
+            switch (relOp)
+            {
+                case ">":
+                    _postfix.WriteCmd(ECmd.CMPG);
+                    break;
+                case "<":
+                    _postfix.WriteCmd(ECmd.CMPL);
+                    break;
+                case ">=":
+                    _postfix.WriteCmd(ECmd.CMPGE);
+                    break;
+                case "<=":
+                    _postfix.WriteCmd(ECmd.CMPLE);
+                    break;
+                case "==":
+                    _postfix.WriteCmd(ECmd.CMPE);
+                    break;
+                default:
+                    throw new Exception($"Неизвестная операция сравнения: {relOp}");
+            }
+        }
+    }
+
+    private void ParseOperand()
+    {
+        if (CurrentToken.Type == TokenType.ID)
+        {
+            _postfix.PushVar(CurrentToken.Value);
+            Match(TokenType.ID);
+        }
+        else if (CurrentToken.Type == TokenType.CONST)
+        {
+            _postfix.PushConst(int.Parse(CurrentToken.Value));
+            Match(TokenType.CONST);
+        }
+        else
+        {
+            throw new Exception("Ошибка: ожидался операнд");
+        }
+    }
+    #endregion
+
+    #region Loop Parsing
+    public void ParseDoWhile()
+    {
+        int startLoopIndex = _postfix.GetCurrentAddress();
+
+        Match(TokenType.DO);
+        Match(TokenType.WHILE);
+
+        ParseLogicalExpression();
+
+        while (HasMoreTokens() && CurrentToken.Type != TokenType.LOOP)
+        {
+            ParseAssignment();
+        }
+
+        Match(TokenType.LOOP);
+
+
+        int jzIndex = _postfix.WriteCmd(ECmd.JZ);
+
+        _postfix.WriteCmd(ECmd.JMP);
+        _postfix.SetCmdPtr(jzIndex, _postfix.GetCurrentAddress() + 1);
+    }
+    #endregion
+
+    public void PrintPostfix()
+    {
+        _postfix.PrintPostfix();
+    }
+
+    public PostfixForm GetPostfixForm()
+    {
+        return _postfix;
+    }
+}
+public class PostfixEntry
+{
+    public EEntryType Type { get; set; }
+    public int Index { get; set; }
+
+    public PostfixEntry(EEntryType type, int index)
+    {
+        Type = type;
+        Index = index;
     }
 }
 public class PostfixForm
@@ -500,332 +780,6 @@ public class PostfixForm
             {
                 Console.WriteLine($"Переменная с хэшом {varHash} = {value}");
             }
-        }
-    }
-}
-public class Parser
-{
-    private readonly List<Token> _tokens;
-    private PostfixForm _postfix;
-    private int _currentTokenIndex;
-
-    public Parser(List<Token> tokens)
-    {
-        _tokens = tokens;
-        _currentTokenIndex = 0;
-        _postfix = new PostfixForm();
-    }
-
-    private Token CurrentToken
-    {
-        get
-        {
-            if (HasMOreTokens())
-            {
-                return _tokens[_currentTokenIndex];
-            }
-            else
-            {
-                throw new Exception("Ошибка: неожиданный конец выражения.");
-            }
-        }
-    }
-
-    private bool HasMOreTokens()
-    {
-        return _currentTokenIndex < _tokens.Count;
-    }
-
-    private void Match(ТипЛексемы expectedType)
-    {
-        if (CurrentToken.Type == expectedType)
-        {
-            _currentTokenIndex++;
-        }
-        else
-        {
-            throw new Exception($"Ошибка: ожидалось {expectedType}, но найдено {CurrentToken.Type}");
-        }
-    }
-
-    public void ParseAssignment()
-    {
-        if (CurrentToken.Type == ТипЛексемы.ID)
-        {
-            _postfix.WriteVar(CurrentToken.Value);
-            Match(ТипЛексемы.ID);
-            Match(ТипЛексемы.Присваивание);
-
-            ParseExpression();
-
-            _postfix.WriteCmd(ECmd.SET);
-
-            if (CurrentToken.Type == ТипЛексемы.Разделитель)
-            {
-                Match(ТипЛексемы.Разделитель);
-            }
-            else
-            {
-                throw new Exception("Ошибка: Ожидалась ';' после присваивания.");
-            }
-        }
-    }
-
-    private void ParseExpression()
-    {
-        ParseTerm();
-        while (CurrentToken.Type == ТипЛексемы.Плюс || CurrentToken.Type == ТипЛексемы.Минус)
-        {
-            if (CurrentToken.Type == ТипЛексемы.Плюс)
-            {
-                Match(ТипЛексемы.Плюс);
-                ParseTerm();
-                _postfix.WriteCmd(ECmd.ADD);
-            }
-            else if (CurrentToken.Type == ТипЛексемы.Минус)
-            {
-                Match(ТипЛексемы.Минус);
-                ParseTerm();
-                _postfix.WriteCmd(ECmd.SUB);
-            }
-        }
-    }
-
-    private void ParseTerm()
-    {
-        ParseFactOr();
-        while (CurrentToken.Type == ТипЛексемы.Умножить || CurrentToken.Type == ТипЛексемы.Деление)
-        {
-            if (CurrentToken.Type == ТипЛексемы.Умножить)
-            {
-                Match(ТипЛексемы.Умножить);
-                ParseFactOr();
-                _postfix.WriteCmd(ECmd.MUL);
-            }
-            else if (CurrentToken.Type == ТипЛексемы.Деление)
-            {
-                Match(ТипЛексемы.Деление);
-                ParseFactOr();
-                _postfix.WriteCmd(ECmd.DIV);
-            }
-        }
-    }
-
-    private void ParseFactOr()
-    {
-        if (CurrentToken.Type == ТипЛексемы.ID)
-        {
-            _postfix.WriteVar(CurrentToken.Value);
-            Match(ТипЛексемы.ID);
-        }
-        else if (CurrentToken.Type == ТипЛексемы.Константа)
-        {
-            _postfix.WriteКонстанта(int.Parse(CurrentToken.Value));
-            Match(ТипЛексемы.Константа);
-        }
-        else
-        {
-            throw new Exception("Ожидалось арифметическое выражение");
-        }
-    }
-
-    private void ParseLogicalExpression()
-    {
-        ParseRelationalExpression();
-
-        while (CurrentToken.Type == ТипЛексемы.And || CurrentToken.Type == ТипЛексемы.Or)
-        {
-            if (CurrentToken.Type == ТипЛексемы.And)
-            {
-                Match(ТипЛексемы.And);
-                ParseRelationalExpression();
-                _postfix.WriteCmd(ECmd.And);
-            }
-            else if (CurrentToken.Type == ТипЛексемы.Or)
-            {
-                Match(ТипЛексемы.Or);
-                ParseRelationalExpression();
-                _postfix.WriteCmd(ECmd.Or);
-            }
-        }
-    }
-
-    private void ParseRelationalExpression()
-    {
-        ParseOperAnd();
-
-        if (CurrentToken.Type == ТипЛексемы.Сравнение)
-        {
-            string СравнениеOp = CurrentToken.Value;
-            Match(ТипЛексемы.Сравнение);
-
-            ParseOperAnd();
-
-            switch (СравнениеOp)
-            {
-                case ">":
-                    _postfix.WriteCmd(ECmd.CMPL);
-                    break;
-                case "<":
-                    _postfix.WriteCmd(ECmd.CMPL);
-                    break;
-                case ">=":
-                    _postfix.WriteCmd(ECmd.CMPLE);
-                    break;
-                case "<=":
-                    _postfix.WriteCmd(ECmd.CMPLE);
-                    break;
-                case "==":
-                    _postfix.WriteCmd(ECmd.CMPE);
-                    break;
-                case "!=":
-                    _postfix.WriteCmd(ECmd.CMPNE);
-                    break;
-                default:
-                    throw new Exception($"Неизвестная операция сравнения: {СравнениеOp}");
-            }
-        }
-    }
-
-    private void ParseOperAnd()
-    {
-        if (CurrentToken.Type == ТипЛексемы.ID)
-        {
-            _postfix.WriteVar(CurrentToken.Value);
-            Match(ТипЛексемы.ID);
-        }
-        else if (CurrentToken.Type == ТипЛексемы.Константа)
-        {
-            _postfix.WriteКонстанта(int.Parse(CurrentToken.Value));
-            Match(ТипЛексемы.Константа);
-        }
-        else
-        {
-            throw new Exception("Ошибка: ожидался операнд");
-        }
-    }
-    public void ParseDoWhile()
-    {
-        int startLoopIndex = _postfix.WriteCmdPtr(-1);
-
-        Match(ТипЛексемы.Do);
-        Match(ТипЛексемы.While);
-
-        ParseLogicalExpression();
-
-        while (CurrentToken.Type != ТипЛексемы.Loop)
-        {
-            ParseAssignment();
-        }
-
-        Match(ТипЛексемы.Loop);
-
-
-        int conditionJmpIndex = _postfix.WriteCmd(ECmd.JZ);
-
-        _postfix.WriteCmdPtr(startLoopIndex);
-        _postfix.WriteCmd(ECmd.JMP);
-
-        _postfix.SetCmdPtr(conditionJmpIndex, _postfix.GetCurrentAddress() + 1);
-    }
-
-    public void PrintPostfix()
-    {
-        _postfix.PrintPostfix();
-    }
-    public PostfixForm GetPostfixForm()
-    {
-        return _postfix;
-    }
-}
-public class PostfixEntry
-{
-    public EEntryType Type { get; set; }
-    public int Index { get; set; }
-    public string Value { get; set; }
-
-    public PostfixEntry(EEntryType type, int index)
-    {
-        Type = type;
-        Index = index;
-    }
-    public PostfixEntry(EEntryType type, int index, string value)
-    {
-        Type = type;
-        Index = index;
-        Value = value;
-    }
-}
-public class PostfixForm
-{
-    private List<PostfixEntry> _postfix;
-
-    public PostfixForm()
-    {
-        _postfix = new List<PostfixEntry>();
-    }
-
-    public int WriteCmd(ECmd cmd)
-    {
-        _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)cmd));
-        return _postfix.Count - 1;
-    }
-
-    public int WriteVar(string varName)
-    {
-        int index = varName.GetHashCode();
-        _postfix.Add(new PostfixEntry(EEntryType.etVar, index, varName));
-        return _postfix.Count - 1;
-    }
-
-    public int WriteКонстанта(int ind)
-    {
-        _postfix.Add(new PostfixEntry(EEntryType.etConst, ind));
-        return _postfix.Count - 1;
-    }
-
-    public int WriteCmdPtr(int ptr)
-    {
-        _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, ptr));
-        return _postfix.Count - 1;
-    }
-
-    public void SetCmdPtr(int ind, int ptr)
-    {
-        _postfix[ind] = new PostfixEntry(EEntryType.etCmdPtr, ptr);
-    }
-
-    public int GetCurrentAddress()
-    {
-        return _postfix.Count - 1;
-    }
-
-    public void PrintPostfix()
-    {
-        foreach (var entry in _postfix)
-        {
-            string entryDescription = "";
-
-            switch (entry.Type)
-            {
-                case EEntryType.etCmd:
-                    entryDescription = $"Команда: {((ECmd)entry.Index)}";
-                    break;
-                case EEntryType.etVar:
-                    entryDescription = $"Переменная: {entry.Value}";
-                    break;
-                case EEntryType.etConst:
-                    entryDescription = $"Константа: {entry.Index}";
-                    break;
-                case EEntryType.etCmdPtr:
-                    entryDescription = $"Указатель команды на адрес: {entry.Index}";
-                    break;
-                default:
-                    entryDescription = "Неизвестный тип";
-                    break;
-            }
-
-            Console.WriteLine(entryDescription);
         }
     }
 }
