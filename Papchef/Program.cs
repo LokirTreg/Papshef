@@ -204,7 +204,7 @@ public class Program
                 Console.BackgroundColor = ConsoleColor.Red;
                 if (лексемы.Any(i => i.Тип == ТипЛексемы.Неизвестно))
                 {
-                    Console.WriteLine("Ошибка : Неизвестные токены :");
+                    Console.WriteLine("Ошибка : Неизвестные лексемы :");
                     foreach (var err in лексемы.Where(i => i.Тип == ТипЛексемы.Неизвестно))
                     {
                         Console.WriteLine("{0,-8} на позиции {1,-8}", err.Значение, err.Позиция);

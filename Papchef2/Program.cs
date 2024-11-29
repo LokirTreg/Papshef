@@ -1,45 +1,44 @@
 ﻿namespace Papshef2;
 public enum ТипЛексемы
 {
-    ID,
+    Индентификатор,
     Константа,
     Присваивание,
     Разделитель,
     Плюс,
+    Минус,
     Умножить,
-    OPENPAREN,
-    CLOSEPAREN,
+    ОткрСкобка,
+    ЗакрСкобка,
     While,
     Colon,
-    DO,
-    END,
-    AND,
-    OR,
+    Do,
+    And,
+    Or,
     Сравнение,
-    CLOSEBRACE,
-    OPENBRACE,
-    FOR,
-    LOOP,
-    DIV
+    ЗакрФигурСкобка,
+    ОткрФигурСкобка,
+    Loop,
+    Делить
 }
-public class Parser
+public class Парсер
 {
-    public readonly List<Token> _tokens;
-    private int _currentTokenIndex;
+    public readonly List<Токен> _токены;
+    private int _индексТекущегоТокена;
 
-    public Parser(List<Token> tokens)
+    public Парсер(List<Токен> токены)
     {
-        _tokens = tokens;
-        _currentTokenIndex = 0;
+        _токены = токены;
+        _индексТекущегоТокена = 0;
     }
 
-    private Token CurrentToken
+    private Токен ТекущийТокен
     {
         get
         {
-            if (HasMoreTokens())
+            if (ЕстьЛиЕщёТокены())
             {
-                return _tokens[_currentTokenIndex];
+                return _токены[_индексТекущегоТокена];
             }
             else
             {
@@ -48,385 +47,377 @@ public class Parser
         }
     }
 
-    private bool HasMoreTokens()
+    private bool ЕстьЛиЕщёТокены()
     {
-        return _currentTokenIndex < _tokens.Count;
+        return _индексТекущегоТокена < _токены.Count;
     }
 
-    private void Match(ТипЛексемы expectedType)
+    private void Сопоставление(ТипЛексемы ожидаемыйТип)
     {
-        if (_currentTokenIndex >= _tokens.Count)
+        if (_индексТекущегоТокена >= _токены.Count)
         {
-            throw new Exception($"Ошибка: ожидался {expectedType}, но входная строка завершилась. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: ожидался {ожидаемыйТип}, но входная строка завершилась. В позиции {_индексТекущегоТокена}");
         }
-        if (CurrentToken.Type == expectedType)
+        if (ТекущийТокен.Тип == ожидаемыйТип)
         {
-            _currentTokenIndex++;
+            _индексТекущегоТокена++;
         }
         else
         {
-            throw new Exception($"Ошибка: ожидалось {expectedType}, но найдено {CurrentToken.Type}. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: ожидалось {ожидаемыйТип}, но найдено {ТекущийТокен.Тип}. В позиции {_индексТекущегоТокена}");
         }
     }
-    public void ParseAssignment()
+    public void Присваивание()
     {
-        if (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.ID)
+        if (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип == ТипЛексемы.Индентификатор)
         {
-            Match(ТипЛексемы.ID);
-            Match(ТипЛексемы.Присваивание);
-            ParseExpression();
+            Сопоставление(ТипЛексемы.Индентификатор);
+            Сопоставление(ТипЛексемы.Присваивание);
+            АрифметическоеВыражение();
 
-            if (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.Разделитель)
+            if (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип == ТипЛексемы.Разделитель)
             {
-                Match(ТипЛексемы.Разделитель);
+                Сопоставление(ТипЛексемы.Разделитель);
             }
             else
             {
-                throw new Exception($"Ошибка: ожидается ';' в конце выражения. В позиции {_currentTokenIndex}");
+                throw new Exception($"Ошибка: ожидается ';' в конце выражения. В позиции {_индексТекущегоТокена}");
             }
         }
         else
         {
-            throw new Exception($"Ошибка: ожидался идентификатор перед присваиванием. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: ожидался идентификатор перед присваиванием. В позиции {_индексТекущегоТокена}");
         }
     }
 
-    private void ParseExpression()
+    private void АрифметическоеВыражение()
     {
-        ParseTerm();
+        Слагаемое();
 
-        while (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.Плюс)
+        while (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип == ТипЛексемы.Плюс || ТекущийТокен.Тип == ТипЛексемы.Минус)
         {
-            Match(ТипЛексемы.Плюс);
-            ParseTerm();
-        }
-    }
-
-    private void ParseTerm()
-    {
-        ParseFactor();
-
-        while (CurrentToken.Type == ТипЛексемы.Умножить || CurrentToken.Type == ТипЛексемы.DIV)
-        {
-            if (CurrentToken.Type == ТипЛексемы.Умножить)
+            if (
+                ТекущийТокен.Тип == ТипЛексемы.Плюс)
             {
-                Match(ТипЛексемы.Умножить);
+                Сопоставление(ТипЛексемы.Плюс);
             }
-            else if (CurrentToken.Type == ТипЛексемы.DIV)
+            else if (ТекущийТокен.Тип == ТипЛексемы.Минус)
             {
-                Match(ТипЛексемы.DIV);
+                Сопоставление(ТипЛексемы.Минус);
             }
-
-            ParseFactor();
+            Слагаемое();
         }
     }
-    private void ParseParameters()
-    {
-        ParseExpression();
 
-        while (CurrentToken.Type == ТипЛексемы.Colon)
+    private void Слагаемое()
+    {
+        Фактор();
+
+        while (ТекущийТокен.Тип == ТипЛексемы.Умножить || ТекущийТокен.Тип == ТипЛексемы.Делить)
         {
-            Match(ТипЛексемы.Colon);
-            ParseExpression();
+            if (ТекущийТокен.Тип == ТипЛексемы.Умножить)
+            {
+                Сопоставление(ТипЛексемы.Умножить);
+            }
+            else if (ТекущийТокен.Тип == ТипЛексемы.Делить)
+            {
+                Сопоставление(ТипЛексемы.Делить);
+            }
+
+            Фактор();
         }
     }
-    private void ParseFactor()
+    private void Фактор()
     {
-        if (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.ID)
+        if (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип == ТипЛексемы.Индентификатор)
         {
-            Match(ТипЛексемы.ID);
-            if (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.OPENPAREN)
-            {
-                Match(ТипЛексемы.OPENPAREN);
-                ParseParameters();
-                Match(ТипЛексемы.CLOSEPAREN);
-            }
-        }else if (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.Константа)
+            Сопоставление(ТипЛексемы.Индентификатор);
+        }else if (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип == ТипЛексемы.Константа)
         {
-            Match(ТипЛексемы.Константа);
+            Сопоставление(ТипЛексемы.Константа);
         }
-        else if (HasMoreTokens() && CurrentToken.Type == ТипЛексемы.OPENPAREN)
+        else if (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип == ТипЛексемы.ОткрСкобка)
         {
-            Match(ТипЛексемы.OPENPAREN);
-            ParseExpression();
-            Match(ТипЛексемы.CLOSEPAREN);
+            Сопоставление(ТипЛексемы.ОткрСкобка);
+            АрифметическоеВыражение();
+            Сопоставление(ТипЛексемы.ЗакрСкобка);
         }
         else
         {
-            throw new Exception($"Ошибка: ожидался идентификатор, константа или выражение в скобках. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: ожидался идентификатор, константа или выражение в скобках. В позиции {_индексТекущегоТокена}");
         }
     }
-    private void ParseLogicalExpression()
+    private void Условие()
     {
-        ParseRelationalExpression();
+        Сравнение();
 
-        while (CurrentToken.Type == ТипЛексемы.AND || CurrentToken.Type == ТипЛексемы.OR)
+        while (ТекущийТокен.Тип == ТипЛексемы.And || ТекущийТокен.Тип == ТипЛексемы.Or)
         {
-            if (CurrentToken.Type == ТипЛексемы.AND)
+            if (ТекущийТокен.Тип == ТипЛексемы.And)
             {
-                Match(ТипЛексемы.AND);
+                Сопоставление(ТипЛексемы.And);
             }
             else
             {
-                Match(ТипЛексемы.OR);
+                Сопоставление(ТипЛексемы.Or);
             }
 
-            ParseRelationalExpression();
+            Сравнение();
         }
     }
 
-    private void ParseRelationalExpression()
+    private void Сравнение()
     {
-        ParseOperand();
+        Операнд();
 
-        if (CurrentToken.Type == ТипЛексемы.Сравнение)
+        if (ТекущийТокен.Тип == ТипЛексемы.Сравнение)
         {
-            Match(ТипЛексемы.Сравнение);
-            ParseOperand();
+            Сопоставление(ТипЛексемы.Сравнение);
+            Операнд();
         }
     }
 
-    private void ParseOperand()
+    private void Операнд()
     {
-        if (CurrentToken.Type == ТипЛексемы.ID)
+        if (ТекущийТокен.Тип == ТипЛексемы.Индентификатор)
         {
-            Match(ТипЛексемы.ID);
+            Сопоставление(ТипЛексемы.Индентификатор);
         }
-        else if (CurrentToken.Type == ТипЛексемы.Константа)
+        else if (ТекущийТокен.Тип == ТипЛексемы.Константа)
         {
-            Match(ТипЛексемы.Константа);
+            Сопоставление(ТипЛексемы.Константа);
         }
         else
         {
-            throw new Exception($"Ошибка: ожидался операнд индентификатор или константа. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: ожидался индентификатор или константа. В позиции {_индексТекущегоТокена}");
         }
     }
-    public void ParseWhileLoop()
+    public void DoWhile()
     {
-        if (CurrentToken.Type == ТипЛексемы.DO)
+        if (ТекущийТокен.Тип == ТипЛексемы.Do)
         {
-            Match(ТипЛексемы.DO);
-            Match(ТипЛексемы.While);
-            ParseLogicalExpression();
+            Сопоставление(ТипЛексемы.Do);
+            Сопоставление(ТипЛексемы.While);
 
-            ParseStatement();
+            Условие();
 
-            Match(ТипЛексемы.LOOP);
+            Оператор();
+
+            Сопоставление(ТипЛексемы.Loop);
         }
         else
         {
-            throw new Exception($"Ошибка: ожидался оператор do. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: ожидался оператор do. В позиции {_индексТекущегоТокена}");
         }
     }
-
-    public void ParseStatement()
+    public void Оператор()
     {
-        if (CurrentToken.Type == ТипЛексемы.ID)
+        if (ТекущийТокен.Тип == ТипЛексемы.Индентификатор)
         {
-            ParseAssignment();
+            Присваивание();
         }
-        else if (CurrentToken.Type == ТипЛексемы.OPENBRACE)
+        else if (ТекущийТокен.Тип == ТипЛексемы.ОткрФигурСкобка)
         {
-            Match(ТипЛексемы.OPENBRACE);
-            while (HasMoreTokens() && CurrentToken.Type != ТипЛексемы.CLOSEBRACE)
+            Сопоставление(ТипЛексемы.ОткрФигурСкобка);
+            while (ЕстьЛиЕщёТокены() && ТекущийТокен.Тип != ТипЛексемы.ЗакрФигурСкобка)
             {
-                ParseStatement();
+                Оператор();
             }
-            Match(ТипЛексемы.CLOSEBRACE);
+            Сопоставление(ТипЛексемы.ЗакрФигурСкобка);
         }
         else
         {
-            throw new Exception($"Ошибка: неизвестный оператор {CurrentToken.Value}. В позиции {_currentTokenIndex}");
+            throw new Exception($"Ошибка: неизвестный оператор {ТекущийТокен.Значение}. В позиции {_индексТекущегоТокена}");
         }
     }
 }
-public class Token
+public class Токен
 {
-    public ТипЛексемы Type { get; }
-    public string Value { get; }
+    public ТипЛексемы Тип { get; }
+    public string Значение { get; }
 
-    public Token(ТипЛексемы type, string value)
+    public Токен(ТипЛексемы тип, string значение)
     {
-        Type = type;
-        Value = value;
+        Тип = тип;
+        Значение = значение;
     }
 
     public override string ToString()
     {
-        return $"{Type} ({Value})";
+        return $"{Тип} ({Значение})";
     }
 }
-public class Lexer
+public class ЛексическийАнализ
 {
-    private readonly string _input;
-    private int _position;
+    private readonly string _входнаяСтрока;
+    private int _позиция;
 
-    public Lexer(string input)
+    public ЛексическийАнализ(string входнаяСтрока)
     {
-        _input = input.ToLower();
-        _position = 0;
+        _входнаяСтрока = входнаяСтрока.ToLower();
+        _позиция = 0;
     }
 
-    public List<Token> Tokenize()
+    public List<Токен> Обозначение()
     {
-        var tokens = new List<Token>();
+        var токены = new List<Токен>();
 
-        while (_position < _input.Length)
+        while (_позиция < _входнаяСтрока.Length)
         {
-            var currentChar = _input[_position];
+            var текущийСимвол = _входнаяСтрока[_позиция];
 
-            if (char.IsWhiteSpace(currentChar))
+            if (char.IsWhiteSpace(текущийСимвол))
             {
-                _position++;
+                _позиция++;
                 continue;
             }
 
-            if (char.IsLetter(currentChar))
+            if (char.IsLetter(текущийСимвол))
             {
-                var identifier = ReadIdentifier();
-                if (identifier == "do")
+                var индетификатор = ЧтениеИндитификатора();
+                if (индетификатор == "do")
                 {
-                    tokens.Add(new Token(ТипЛексемы.DO, identifier));
+                    токены.Add(new Токен(ТипЛексемы.Do, индетификатор));
                 }
-                else if (identifier == "while")
+                else if (индетификатор == "while")
                 {
-                    tokens.Add(new Token(ТипЛексемы.While, identifier));
+                    токены.Add(new Токен(ТипЛексемы.While, индетификатор));
                 }
-                else if (identifier == "and")
+                else if (индетификатор == "and")
                 {
-                    tokens.Add(new Token(ТипЛексемы.AND, identifier));
+                    токены.Add(new Токен(ТипЛексемы.And, индетификатор));
                 }
-                else if (identifier == "or")
+                else if (индетификатор == "or")
                 {
-                    tokens.Add(new Token(ТипЛексемы.OR, identifier));
+                    токены.Add(new Токен(ТипЛексемы.Or, индетификатор));
                 }
-                else if (identifier == "loop")
+                else if (индетификатор == "loop")
                 {
-                    tokens.Add(new Token(ТипЛексемы.LOOP, identifier));
+                    токены.Add(new Токен(ТипЛексемы.Loop, индетификатор));
                 }
                 else
                 {
-                    tokens.Add(new Token(ТипЛексемы.ID, identifier));
+                    токены.Add(new Токен(ТипЛексемы.Индентификатор, индетификатор));
                 }
                 continue;
             }
 
-            if (char.IsDigit(currentChar))
+            if (char.IsDigit(текущийСимвол))
             {
-                var number = ReadNumber();
-                tokens.Add(new Token(ТипЛексемы.Константа, number));
+                var число = ЧтениеЧисла();
+                токены.Add(new Токен(ТипЛексемы.Константа, число));
                 continue;
             }
 
-            switch (currentChar)
+            switch (текущийСимвол)
             {
                 case '=':
-                    if (_position + 1 < _input.Length && _input[_position + 1] == '=')
+                    if (_позиция + 1 < _входнаяСтрока.Length && _входнаяСтрока[_позиция + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "=="));
-                        _position += 2;
+                        токены.Add(new Токен(ТипЛексемы.Сравнение, "=="));
+                        _позиция += 2;
                     }
                     else
                     {
-                        tokens.Add(new Token(ТипЛексемы.Присваивание, "="));
-                        _position++;
+                        токены.Add(new Токен(ТипЛексемы.Присваивание, "="));
+                        _позиция++;
                     }
                     break;
                 case '!':
-                    if (_position + 1 < _input.Length && _input[_position + 1] == '=')
+                    if (_позиция + 1 < _входнаяСтрока.Length && _входнаяСтрока[_позиция + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "!="));
-                        _position += 2;
+                        токены.Add(new Токен(ТипЛексемы.Сравнение, "!="));
+                        _позиция += 2;
                     }
                     break;
                 case '<':
-                    if (_position + 1 < _input.Length && _input[_position + 1] == '=')
+                    if (_позиция + 1 < _входнаяСтрока.Length && _входнаяСтрока[_позиция + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "<="));
-                        _position += 2;
+                        токены.Add(new Токен(ТипЛексемы.Сравнение, "<="));
+                        _позиция += 2;
                     }
                     else
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, "<"));
-                        _position++;
+                        токены.Add(new Токен(ТипЛексемы.Сравнение, "<"));
+                        _позиция++;
                     }
                     break;
                 case '>':
-                    if (_position + 1 < _input.Length && _input[_position + 1] == '=')
+                    if (_позиция + 1 < _входнаяСтрока.Length && _входнаяСтрока[_позиция + 1] == '=')
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, ">="));
-                        _position += 2;
+                        токены.Add(new Токен(ТипЛексемы.Сравнение, ">="));
+                        _позиция += 2;
                     }
                     else
                     {
-                        tokens.Add(new Token(ТипЛексемы.Сравнение, ">"));
-                        _position++;
+                        токены.Add(new Токен(ТипЛексемы.Сравнение, ">"));
+                        _позиция++;
                     }
                     break;
                 case '+':
-                    tokens.Add(new Token(ТипЛексемы.Плюс, "+"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.Плюс, "+"));
+                    _позиция++;
                     break;
                 case '-':
-                    tokens.Add(new Token(ТипЛексемы.Плюс, "-"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.Минус, "-"));
+                    _позиция++;
                     break;
                 case '*':
-                    tokens.Add(new Token(ТипЛексемы.Умножить, "*"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.Умножить, "*"));
+                    _позиция++;
                     break;
                 case '(':
-                    tokens.Add(new Token(ТипЛексемы.OPENPAREN, "("));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.ОткрСкобка, "("));
+                    _позиция++;
                     break;
                 case ')':
-                    tokens.Add(new Token(ТипЛексемы.CLOSEPAREN, ")"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.ЗакрСкобка, ")"));
+                    _позиция++;
                     break;
                 case '{':
-                    tokens.Add(new Token(ТипЛексемы.OPENBRACE, "{"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.ОткрФигурСкобка, "{"));
+                    _позиция++;
                     break;
                 case '}':
-                    tokens.Add(new Token(ТипЛексемы.CLOSEBRACE, "}"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.ЗакрФигурСкобка, "}"));
+                    _позиция++;
                     break;
                 case ';':
-                    tokens.Add(new Token(ТипЛексемы.Разделитель, ";"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.Разделитель, ";"));
+                    _позиция++;
                     break;
                 case '/':
-                    tokens.Add(new Token(ТипЛексемы.DIV, "/"));
-                    _position++;
+                    токены.Add(new Токен(ТипЛексемы.Делить, "/"));
+                    _позиция++;
                     break;
                 default:
-                    throw new Exception($"Неизвестный символ: {currentChar}");
+                    throw new Exception($"Неизвестный символ: {текущийСимвол}");
             }
         }
 
-        return tokens;
+        return токены;
     }
 
-    private string ReadIdentifier()
+    private string ЧтениеИндитификатора()
     {
-        var start = _position;
-        while (_position < _input.Length && char.IsLetterOrDigit(_input[_position]))
+        var начало = _позиция;
+        while (_позиция < _входнаяСтрока.Length && char.IsLetterOrDigit(_входнаяСтрока[_позиция]))
         {
-            _position++;
+            _позиция++;
         }
 
-        return _input.Substring(start, _position - start);
+        return _входнаяСтрока.Substring(начало, _позиция - начало);
     }
 
-    private string ReadNumber()
+    private string ЧтениеЧисла()
     {
-        var start = _position;
-        while (_position < _input.Length && char.IsDigit(_input[_position]))
+        var начало = _позиция;
+        while (_позиция < _входнаяСтрока.Length && char.IsDigit(_входнаяСтрока[_позиция]))
         {
-            _position++;
+            _позиция++;
         }
 
-        return _input.Substring(start, _position - start);
+        return _входнаяСтрока.Substring(начало, _позиция - начало);
     }
 }
 
@@ -438,21 +429,21 @@ public class Program
         while (true)
         {
             Console.WriteLine("Введите выражение или exit для выхода:");
-            string input = Console.ReadLine();
+            string входнаяСтрока = Console.ReadLine();
 
-            if (input.ToLower() == "exit")
+            if (входнаяСтрока.ToLower() == "exit")
             {
                 Console.WriteLine();
                 break;
             }
             try
             {
-                var lexer = new Lexer(input);
-                var tokens = lexer.Tokenize();
+                var ЛексическийАнализатор = new ЛексическийАнализ(входнаяСтрока);
+                var токены = ЛексическийАнализатор.Обозначение();
 
-                var parser = new Parser(tokens);
+                var парсер = new Парсер(токены);
 
-                parser.ParseWhileLoop();
+                парсер.DoWhile();
                 Console.WriteLine("Анализ успешно завершен.");
             }
             catch (Exception ex)
