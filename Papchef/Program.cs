@@ -36,15 +36,15 @@ public class ТаблицаСимволов
 }
 public class Лексема
 {
-    public string Value { get; }
-    public ТипЛексемы Type { get; }
-    public int Position { get; }
+    public string Значение { get; }
+    public ТипЛексемы Тип { get; }
+    public int Позиция { get; }
 
-    public Лексема(string value, ТипЛексемы type, int position)
+    public Лексема(string значение, ТипЛексемы тип, int позиция)
     {
-        Value = value;
-        Type = type;
-        Position = position;
+        Значение = значение;
+        Тип = тип;
+        Позиция = позиция;
     }
 }
 public class ЛексическийАнализ
@@ -52,9 +52,9 @@ public class ЛексическийАнализ
     private readonly string _входнаяСтрока;
     private int _позиция;
 
-    public ЛексическийАнализ(string input)
+    public ЛексическийАнализ(string входнаяСтрока)
     {
-        _входнаяСтрока = input;
+        _входнаяСтрока = входнаяСтрока;
         _позиция = 0;
     }
 
@@ -67,24 +67,24 @@ public class ЛексическийАнализ
             {
                 _позиция++;
             }
-            else if (IsLetter(ТекущийСимвол()))
+            else if (char.IsLetter(ТекущийСимвол()))
             {
-                var Идентификатор = ReadWhile(IsLetterOrDigit);
-                лексемы.Add(new Лексема(Идентификатор, IdentifyKeyword(Идентификатор), _позиция));
+                var Идентификатор = ЧитатьПокаУсловие(char.IsLetterOrDigit);
+                лексемы.Add(new Лексема(Идентификатор, ОпределениеКлючевогоСлова(Идентификатор), _позиция));
             }
             else if (char.IsDigit(ТекущийСимвол()))
             {
-                var Константа = ReadWhile(char.IsDigit);
+                var Константа = ЧитатьПокаУсловие(char.IsDigit);
                 лексемы.Add(new Лексема(Константа, ТипЛексемы.Константа, _позиция));
             }
             else if (ТекущийСимвол() == ';')
             {
-                var символ = ReadWhile(c => c == ';');
+                var символ = ЧитатьПокаУсловие(c => c == ';');
                 лексемы.Add(new Лексема(символ, ТипЛексемы.Разделитель, _позиция));
             }
             else if (ТекущийСимвол() == '<' || ТекущийСимвол() == '=' || ТекущийСимвол() == '>' || ТекущийСимвол() == '!')
             {
-                var символ = ReadWhile(c => c == '<' || c == '=' || c == '!' || c == '>');
+                var символ = ЧитатьПокаУсловие(c => c == '<' || c == '=' || c == '!' || c == '>');
 
                 var операторыСравнения = ТаблицаСимволов.ТаблицаЗаданныхСимволов().GroupBy(i => i.Item4).FirstOrDefault(i => i.Key == ТипЛексемы.Сравнение).Select(i => i.Item2).ToList();
                 if (символ == "=")
@@ -102,7 +102,7 @@ public class ЛексическийАнализ
             }
             else if (ТекущийСимвол() == '+' || ТекущийСимвол() == '-' || ТекущийСимвол() == '/' || ТекущийСимвол() == '*')
             {
-                var символ = ReadWhile(c => c == '+' || c == '-' || c == '/' || c == '*');
+                var символ = ЧитатьПокаУсловие(c => c == '+' || c == '-' || c == '/' || c == '*');
                 var арифметическиеСравнения = ТаблицаСимволов.ТаблицаЗаданныхСимволов().GroupBy(i => i.Item4).FirstOrDefault(i => i.Key == ТипЛексемы.АрифметическийОператор).Select(i => i.Item2).ToList();
                 if (арифметическиеСравнения.Contains(символ))
                 {
@@ -128,7 +128,7 @@ public class ЛексическийАнализ
         return _входнаяСтрока[_позиция];
     }
 
-    private string ReadWhile(Func<char, bool> condition)
+    private string ЧитатьПокаУсловие(Func<char, bool> condition)
     {
         var start = _позиция;
         while (_позиция < _входнаяСтрока.Length && condition(_входнаяСтрока[_позиция]))
@@ -139,13 +139,9 @@ public class ЛексическийАнализ
         return _входнаяСтрока.Substring(start, _позиция - start);
     }
 
-    private bool IsLetter(char ch) => char.IsLetter(ch);
-
-    private bool IsLetterOrDigit(char ch) => char.IsLetterOrDigit(ch);
-
-    private ТипЛексемы IdentifyKeyword(string value)
+    private ТипЛексемы ОпределениеКлючевогоСлова(string значение)
     {
-        switch (value)
+        switch (значение)
         {
             case "while": return ТипЛексемы.While;
             case "do": return ТипЛексемы.Do;
@@ -183,35 +179,35 @@ public class Program
         while (true)
         {
             Console.WriteLine("Введите строку для анализа или exit для завершения программы или ter для показа таблицы терминала:");
-            string input = Console.ReadLine();
+            string входнаяСтрока = Console.ReadLine();
             Console.WriteLine();
 
-            if (input == "exit")
+            if (входнаяСтрока == "exit")
             {
                 break;
             }
-            else if (input == "ter")
+            else if (входнаяСтрока == "ter")
             {
                 ТаблицаСимволов.ВывестиТаблицу();
             }
             else
             {
-                var лексемы = new ЛексическийАнализ(input).Анализ();
+                var лексемы = new ЛексическийАнализ(входнаяСтрока).Анализ();
 
                 Console.WriteLine("{0,-25} | {1,-8} | {2,-8} |", "Тип", "Значение", "Позиция");
                 foreach (var лексема in лексемы)
                 {
                         Console.WriteLine("{0,-25} | {1,-8} | {2,-8} |",
-                                          лексема.Type, лексема.Value, лексема.Position);
+                                          лексема.Тип, лексема.Значение, лексема.Позиция);
                 }
 
                 Console.BackgroundColor = ConsoleColor.Red;
-                if (лексемы.Any(i => i.Type == ТипЛексемы.Неизвестно))
+                if (лексемы.Any(i => i.Тип == ТипЛексемы.Неизвестно))
                 {
                     Console.WriteLine("Ошибка : Неизвестные токены :");
-                    foreach (var err in лексемы.Where(i => i.Type == ТипЛексемы.Неизвестно))
+                    foreach (var err in лексемы.Where(i => i.Тип == ТипЛексемы.Неизвестно))
                     {
-                        Console.WriteLine("{0,-8} на позиции {1,-8}", err.Value, err.Position);
+                        Console.WriteLine("{0,-8} на позиции {1,-8}", err.Значение, err.Позиция);
                     }
                 }
             }
