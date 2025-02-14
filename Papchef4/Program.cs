@@ -6,10 +6,10 @@
         {
             while (true)
             {
-                Console.WriteLine("Введите выражение или exit для выхода:");
+                Console.WriteLine("Введите выражение или \"выход\" для выхода:");
                 string входнаяСтрока = Console.ReadLine();
 
-                if (входнаяСтрока.ToLower() == "exit")
+                if (входнаяСтрока.ToLower() == "выход")
                 {
                     Console.WriteLine();
                     break;

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Task3
 {
-    public class ПостфикснаяФорма
+    public class ПостфикснаяФормаПолиз
     {
         private List<ЗаписьДляПолиз> _полиз;
         public int _индекс = 0;
 
-        public ПостфикснаяФорма()
+        public ПостфикснаяФормаПолиз()
         {
             _полиз = new List<ЗаписьДляПолиз>();
         }
